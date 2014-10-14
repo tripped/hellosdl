@@ -23,9 +23,7 @@ int main(int argc, char** argv)
     auto ren = sdl::renderer(win, -1,
             SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
-    // Load surface
-    auto bmp = sdl::bitmap("hello.bmp");
-
+    // Load textures
     auto bg = ren.texture_from_file("bg.png");
     auto porky = ren.texture_from_file("porky.png");
 
