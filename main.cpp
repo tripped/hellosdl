@@ -26,7 +26,7 @@ namespace sdl {
         error() {
             this->msg_ = SDL_GetError();
         }
-        const char* what() {
+        const char* what() const throw() {
             return this->msg_;
         }
     private:
