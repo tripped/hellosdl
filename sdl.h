@@ -1,4 +1,6 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+
 
 namespace sdl {
     /*
@@ -29,6 +31,9 @@ namespace sdl {
 
     void init(uint32_t flags) {
         if (SDL_Init(flags) != 0) {
+            throw error();
+        }
+        if ((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) != IMG_INIT_PNG) {
             throw error();
         }
     }
@@ -91,6 +96,12 @@ namespace sdl {
             SDL_Texture* texture_;
             friend class renderer;
         public:
+            texture(renderer const& ren, std::string const& filename)
+                : texture_(IMG_LoadTexture(ren.ren_, filename.c_str())) {
+                if (this->texture_ == nullptr) {
+                    throw error();
+                }
+            }
             texture(renderer const& ren, surface const& sfc)
                 : texture_(SDL_CreateTextureFromSurface(ren.ren_, sfc.surface_)) {
                 if (this->texture_ == nullptr) {
@@ -110,6 +121,10 @@ namespace sdl {
             SDL_DestroyRenderer(this->ren_);
         }
 
+        texture texture_from_file(std::string const& filename) {
+            return texture(*this, filename);
+        }
+
         texture texture_from_surface(surface const& sfc) {
             return texture(*this, sfc);
         }
@@ -125,6 +140,21 @@ namespace sdl {
             if (SDL_RenderCopy(this->ren_, tex.texture_, src, dst) != 0) {
                 throw error();
             }
+        }
+
+        void copy(texture const& tex, int x, int y, int w, int h) {
+            SDL_Rect dst;
+            dst.x = x;
+            dst.y = y;
+            dst.w = w;
+            dst.h = h;
+            this->copy(tex, NULL, &dst);
+        }
+
+        void copy(texture const& tex, int x, int y) {
+            int w, h;
+            SDL_QueryTexture(tex.texture_, NULL, NULL, &w, &h);
+            this->copy(tex, x, y, w, h);
         }
 
         void present() const {

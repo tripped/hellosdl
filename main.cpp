@@ -5,6 +5,7 @@
 
 const int SCREEN_W = 920;
 const int SCREEN_H = 480;
+const int TILE_SIZE = 256;
 
 
 int main(int argc, char** argv)
@@ -25,14 +26,24 @@ int main(int argc, char** argv)
     // Load surface
     auto bmp = sdl::bitmap("hello.bmp");
 
-    // Make texture from surface
-    auto tex = ren.texture_from_surface(bmp);
+    auto bg = ren.texture_from_file("bg.png");
+    auto porky = ren.texture_from_file("porky.png");
+
+    int xtiles = SCREEN_W / TILE_SIZE + 1;
+    int ytiles = SCREEN_H / TILE_SIZE + 1;
 
     ren.clear();
-    ren.copy(tex, NULL, NULL);
+    for (int y = 0; y < ytiles; ++y) {
+        for (int x = 0; x < xtiles; ++x) {
+            ren.copy(bg, x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+    }
+
+    ren.copy(porky, SCREEN_W/2 - 50, SCREEN_H/2 - 50);
+
     ren.present();
     
-    SDL_Delay(2000);
+    SDL_Delay(5000);
 
     return 0;
 }
