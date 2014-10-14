@@ -12,7 +12,7 @@ all: $(EXE)
 $(EXE): main.o
 	$(CXX) $< $(LDFLAGS) -o $@
 
-main.o: main.cpp
+main.o: main.cpp sdl.h scopeguard.h
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 clean:
