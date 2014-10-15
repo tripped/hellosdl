@@ -33,7 +33,7 @@ struct vec2
         return vec2(x/r, y/r);
     }
     // Vector dot product
-    double operator*(vec2 const& rhs) const {
+    double dot(vec2 const& rhs) const {
         return x * rhs.x + y * rhs.y;
     }
 

@@ -109,7 +109,7 @@ int main(int argc, char** argv)
         {
             auto N = normal((position.x < 0), (position.y < 0),
                             (position.x > right), (position.y > bottom));
-            auto U = (velocity * N) * N;
+            auto U = velocity.dot(N) * N;
             auto W = velocity - U;
             velocity = W - U;
 
