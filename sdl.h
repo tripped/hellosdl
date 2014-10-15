@@ -94,6 +94,8 @@ namespace sdl {
         class texture
         {
             SDL_Texture* texture_;
+            int w_;
+            int h_;
             friend class renderer;
         public:
             texture(renderer const& ren, std::string const& filename)
@@ -101,12 +103,22 @@ namespace sdl {
                 if (this->texture_ == nullptr) {
                     throw error();
                 }
+                SDL_QueryTexture(texture_, NULL, NULL, &this->w_, &this->h_);
             }
             texture(renderer const& ren, surface const& sfc)
                 : texture_(SDL_CreateTextureFromSurface(ren.ren_, sfc.surface_)) {
                 if (this->texture_ == nullptr) {
                     throw error();
                 }
+                SDL_QueryTexture(texture_, NULL, NULL, &this->w_, &this->h_);
+            }
+
+            int width() const {
+                return this->w_;
+            }
+
+            int height() const {
+                return this->h_;
             }
         };
 
