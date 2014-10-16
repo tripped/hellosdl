@@ -148,11 +148,11 @@ namespace sdl {
             SDL_DestroyRenderer(this->ren_);
         }
 
-        texture texture_from_file(std::string const& filename) {
+        texture texture_from_file(std::string const& filename) const {
             return texture(*this, filename);
         }
 
-        texture texture_from_surface(surface const& sfc) {
+        texture texture_from_surface(surface const& sfc) const {
             return texture(*this, sfc);
         }
 
