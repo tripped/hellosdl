@@ -70,9 +70,24 @@ namespace sdl {
         SDL_Surface* surface_;
         friend class renderer;
     public:
+        // TODO: add move constructor
         surface(SDL_Surface* s) : surface_(s) { }
+        surface(std::string const& filename)
+            : surface_(IMG_Load(filename.c_str())) { }
         ~surface() {
             SDL_FreeSurface(this->surface_);
+        }
+
+        int width() const {
+            return surface_->w;
+        }
+
+        int height() const {
+            return surface_->h;
+        }
+
+        SDL_Surface* handle() const {
+            return this->surface_;
         }
     };
 
