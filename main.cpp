@@ -120,13 +120,15 @@ public:
         compression
     };
 
-    distortion(sdl::surface const& bg, int type,
+    // TODO: always moving the bg argument is a little awkward,
+    // try to come up with a better interface
+    distortion(sdl::surface && bg, int type,
             double A, double F, double S, double C)
-        : src_(bg), type_(type), amplitude_(A),
+        : src_(std::move(bg)), type_(type), amplitude_(A),
         frequency_(F), timescale_(S), compression_(C), ticks_(0)
     {
         // Allocate a destination surface the same size as source
-        // TODO: a copy method or somesuch, plus move semantics
+        // TODO: don't do this, just accept a target tex in render
         SDL_Surface* copy = SDL_CreateRGBSurface(0,
                 src_.width(), src_.height(), 32,
                 0x000000ff,
@@ -171,7 +173,6 @@ int main(int argc, char** argv)
             SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
     // Load textures
-    auto bg_surface = sdl::surface("bg.png");
     auto porky = ren.texture_from_file("porky.png");
     double right = SCREEN_W - porky.width();
     double bottom = SCREEN_H - porky.height();
@@ -180,7 +181,7 @@ int main(int argc, char** argv)
     vec2 velocity = random(2.0, 4.0) * vec2(random(0.0, 2*PI));
 
     // Create background distortion effect
-    distortion dist(bg_surface, 2, 16.0, 0.1, 0.1, 1.0);
+    distortion dist(sdl::surface("bg.png"), 2, 16.0, 0.1, 0.1, 1.0);
 
     bool done = false;
     SDL_Event e;

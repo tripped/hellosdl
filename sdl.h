@@ -74,9 +74,17 @@ namespace sdl {
         surface(SDL_Surface* s) : surface_(s) { }
         surface(std::string const& filename)
             : surface_(IMG_Load(filename.c_str())) { }
+        surface(surface && other)
+            : surface_(other.surface_) {
+            other.surface_ = NULL;
+        }
         ~surface() {
             SDL_FreeSurface(this->surface_);
         }
+
+        // Non-copyable for now
+        surface(surface const& other) = delete;
+        surface& operator=(surface const& rhs) = delete;
 
         int width() const {
             return surface_->w;
