@@ -93,6 +93,14 @@ namespace sdl {
             return surface_->h;
         }
 
+        int32_t* pixels() const {
+            return (int32_t*)surface_->pixels;
+        }
+
+        int pitch() const {
+            return surface_->pitch;
+        }
+
         SDL_Surface* handle() const {
             return this->surface_;
         }
