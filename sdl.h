@@ -142,6 +142,23 @@ namespace sdl {
             int height() const {
                 return this->h_;
             }
+
+            struct locked {
+                int32_t* pixels;
+                int pitch;
+            };
+            locked lock() const {
+                locked result;
+                if (SDL_LockTexture(this->texture_, NULL,
+                                    (void**)&result.pixels, &result.pitch)) {
+                    throw error();
+                }
+                return result;
+            }
+
+            void unlock() {
+                SDL_UnlockTexture(this->texture_);
+            }
         };
 
         renderer(window const& win, int index, uint32_t flags) {
