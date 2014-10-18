@@ -49,45 +49,68 @@ vec2 normal(bool left, bool top, bool right, bool bottom) {
 
 
 /*
- * Compute a specific frame of a distortion animation from
- * a source surface and write it into a destination surface.
- * (These should not be the same surface.)
+ * Struct: DISTORTION
  *
- * @param src   source surface
- * @param dst   destination surface (must have same size and format)
- * @param type  0=horz, 1=horz interlaced, 2=vert compression
- * @param t     tick number
- * @param A     amplitude of distortion wave
- * @param F     frequency
- * @param S     time scaling factor
- * @param C     compression factor, for vertical effect
+ * The parameters of an EarthBound-style distortion animation
  */
-int distort_frame(SDL_Surface* src, SDL_Surface* dst, int type, int t,
-        double A=16.0, double F=0.1, double S=0.1, double C=1.0)
+struct DISTORTION
 {
-    // Note that we're assuming 32-bit pixels here;
-    // this may change for other formats
-    int32_t* src_data = (int32_t*)src->pixels;
-    int32_t* dst_data = (int32_t*)dst->pixels;
+    enum {
+        HORIZONTAL,
+        INTERLACED,
+        VERTICAL
+    };
+    int type;
+    double A;   // Amplitude
+    double F;   // Frequency
+    double S;   // Time scaling
+    double C;   // Compression factor (VERTICAL only)
+};
 
-    for (int y = 0; y < src->h; ++y) {
+/*
+ * Function template: distort_frame
+ *
+ * Compute a specific frame of an EarthBound-style distortion animation
+ * from specified source pixels and write it into specified destination
+ * pixels. These should not overlap. Pixels can be any integral type.
+ *
+ * @param src       Source pixels
+ * @param src_pitch Length of a source row, in bytes
+ * @param src_w     Width of the source, in pixels
+ * @param src_h     Height of the source, in pixels
+ * @param dst       Destination pixels
+ * @param dst_pitch Length of a destination row, in bytes
+ * @param params    Distortion parameters
+ * @param t         Tick number of the frame to compute
+ */
+template<typename T>
+int distort_frame(T* src, int src_pitch, int src_w, int src_h,
+                  T* dst, int dst_pitch, DISTORTION const& params, int t)
+{
+    int const& type = params.type;
+    double const& A = params.A;
+    double const& F = params.F;
+    double const& S = params.S;
+    double const& C = params.C;
+
+    for (int y = 0; y < src_h; ++y) {
         int offset = A * sinf(F * y + S * t);
-
         int new_x = 0;
         int new_y = y;
 
-        if (type == 0) {
+        if (type == DISTORTION::HORIZONTAL) {
             new_x = offset;
-        } else if (type == 1) {
+        } else if (type == DISTORTION::INTERLACED) {
             new_x = (y % 2)? offset : -offset;
-        } else if (type == 2) {
-            new_y = (int)(y * C + offset + src->h) % src->h;
+        } else if (type == DISTORTION::VERTICAL) {
+            new_y = (int)(y * C + offset + src_h) % src_h;
         }
 
-        for (int x = 0; x < src->w; ++x) {
+        for (int x = 0; x < src_w; ++x) {
             // Correctly wrap x offset
-            new_x = (new_x + src->w) % src->w;
-            dst_data[y*dst->w + x] = src_data[new_y*src->w + new_x];
+            new_x = (new_x + src_w) % src_w;
+            *((T*)((char*)(dst) + y*dst_pitch) + x) =
+                *((T*)((char*)(src) + new_y*src_pitch) + new_x);
             ++new_x;
         }
     }
@@ -104,13 +127,9 @@ int distort_frame(SDL_Surface* src, SDL_Surface* dst, int type, int t,
 class distortion
 {
     sdl::surface src_;
-    std::unique_ptr<sdl::surface> dst_;
-
-    int type_;
-    double amplitude_;
-    double frequency_;
-    double timescale_;
-    double compression_;
+    sdl::renderer ren_;
+    sdl::renderer::texture tex_;
+    DISTORTION distort_;
     int ticks_;
 
 public:
@@ -122,37 +141,28 @@ public:
 
     // TODO: always moving the bg argument is a little awkward,
     // try to come up with a better interface
-    distortion(sdl::surface && bg, int type,
-            double A, double F, double S, double C)
-        : src_(std::move(bg)), type_(type), amplitude_(A),
-        frequency_(F), timescale_(S), compression_(C), ticks_(0)
-    {
-        // Allocate a destination surface the same size as source
-        // TODO: don't do this, just accept a target tex in render
-        SDL_Surface* copy = SDL_CreateRGBSurface(0,
-                src_.width(), src_.height(), 32,
-                0x000000ff,
-                0x0000ff00,
-                0x00ff0000,
-                0xff000000);
-        dst_.reset(new sdl::surface(copy));
-    }
+    distortion(sdl::surface && bg, sdl::renderer const& renderer,
+            int type, double A, double F, double S, double C)
+        : src_(std::move(bg)),
+          ren_(renderer),
+          tex_(renderer, SDL_TEXTUREACCESS_STREAMING, src_.width(), src_.height()),
+          distort_({type, A, F, S, C}),
+          ticks_(0) { }
 
     void update() {
-        distort_frame(src_.handle(), dst_->handle(),
-              type_, ticks_, amplitude_, frequency_, timescale_,
-              compression_);
+        auto lock = tex_.lock();
+
+        distort_frame(src_.pixels(), src_.pitch(), src_.width(), src_.height(),
+                lock.pixels, lock.pitch, distort_, ticks_);
         ++ticks_;
     }
 
-    void render(sdl::renderer & renderer, int x, int y, int w, int h) {
-        // Do the stupid thing and create a texture right here
-        auto tex = renderer.texture_from_surface(*dst_);
-        renderer.copy(tex, x, y, w, h);
+    void render(int x, int y, int w, int h) {
+        ren_.copy(tex_, x, y, w, h);
     }
 
-    void render(sdl::renderer & renderer, int x, int y) {
-        render(renderer, x, y, src_.width(), src_.height());
+    void render(int x, int y) {
+        render(x, y, src_.width(), src_.height());
     }
 };
 
@@ -181,7 +191,7 @@ int main(int argc, char** argv)
     vec2 velocity = random(2.0, 4.0) * vec2(random(0.0, 2*PI));
 
     // Create background distortion effect
-    distortion dist(sdl::surface("bg.png"), 2, 16.0, 0.1, 0.1, 1.0);
+    distortion dist(sdl::surface("bg.png"), ren, 2, 16.0, 0.1, 0.1, 1.0);
 
     bool done = false;
     SDL_Event e;
@@ -216,7 +226,7 @@ int main(int argc, char** argv)
             position.y = std::max(0.0, std::min(bottom, position.y));
         }
 
-        dist.render(ren, 0, 0, SCREEN_W, SCREEN_H);
+        dist.render(0, 0, SCREEN_W, SCREEN_H);
         ren.copy(porky, position.x, position.y, porky.width()*2, porky.height()*2);
 
         ren.present();
