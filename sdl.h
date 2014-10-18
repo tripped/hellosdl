@@ -144,20 +144,30 @@ namespace sdl {
             }
 
             struct locked {
+            private:
+                SDL_Texture* tex_;
+            public:
                 int32_t* pixels;
                 int pitch;
-            };
-            locked lock() const {
-                locked result;
-                if (SDL_LockTexture(this->texture_, NULL,
-                                    (void**)&result.pixels, &result.pitch)) {
-                    throw error();
-                }
-                return result;
-            }
 
-            void unlock() {
-                SDL_UnlockTexture(this->texture_);
+                explicit locked(SDL_Texture* tex) : tex_(tex) {
+                    if (SDL_LockTexture(tex_, NULL, (void**)&pixels, &pitch)) {
+                        throw error();
+                    }
+                }
+                locked& operator=(locked const&) = delete;
+                locked(locked const&) = delete;
+                locked(locked && other) : tex_(other.tex_) {
+                    other.tex_ = nullptr; 
+                }
+
+                ~locked() { 
+                    SDL_UnlockTexture(tex_);
+                }
+            };
+
+            locked lock() const {
+                return locked(this->texture_);
             }
         };
 
