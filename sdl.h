@@ -142,6 +142,15 @@ namespace sdl {
                 }
                 SDL_QueryTexture(texture_, NULL, NULL, &this->w_, &this->h_);
             }
+            texture(renderer const& ren, int access, int w, int h)
+                : texture_(SDL_CreateTexture(ren.ren_, SDL_PIXELFORMAT_ABGR8888,
+                            access, w, h))
+            {
+                if (this->texture_ == nullptr) {
+                    throw error();
+                }
+                SDL_QueryTexture(texture_, NULL, NULL, &this->w_, &this->h_);
+            }
 
             int width() const {
                 return this->w_;
