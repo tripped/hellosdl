@@ -89,12 +89,6 @@ class distortion
     int ticks_;
 
 public:
-    enum type {
-        horizontal,
-        interlaced,
-        compression
-    };
-
     // TODO: always moving the bg argument is a little awkward,
     // try to come up with a better interface
     distortion(sdl::surface && bg, sdl::renderer const& renderer,
