@@ -114,4 +114,24 @@ public:
     void render(int x, int y) {
         render(x, y, src_.width(), src_.height());
     }
+
+    int& type() {
+        return distort_.type;
+    }
+
+    double& amplitude() {
+        return distort_.A;
+    }
+
+    double& frequency() {
+        return distort_.F;
+    }
+
+    double& timescale() {
+        return distort_.S;
+    }
+
+    double& compression() {
+        return distort_.C;
+    }
 };
