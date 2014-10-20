@@ -81,6 +81,27 @@ int main(int argc, char** argv)
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
                 done = true;
+            } else if (e.type == SDL_KEYDOWN) {
+                auto k = e.key.keysym.sym;
+                if (k == SDLK_SPACE) {
+                    dist.type() = (dist.type() + 1) % 3;
+                } else if (k == SDLK_UP) {
+                    dist.amplitude() += 1;
+                } else if (k == SDLK_DOWN) {
+                    dist.amplitude() -= 1;
+                } else if (k == SDLK_RIGHT) {
+                    dist.frequency() += 0.001;
+                } else if (k == SDLK_LEFT) {
+                    dist.frequency() -= 0.001;
+                } else if (k == SDLK_KP_MULTIPLY) {
+                    dist.timescale() += 0.001;
+                } else if (k == SDLK_KP_DIVIDE) {
+                    dist.timescale() -= 0.001;
+                } else if (k == SDLK_KP_PLUS) {
+                    dist.compression() += 0.1;
+                } else if (k == SDLK_KP_MINUS) {
+                    dist.compression() -= 0.1;
+                }
             }
         }
 
